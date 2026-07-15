@@ -35,11 +35,12 @@ public class BookController {
             @RequestParam(required = false) Long authorId,
             @RequestParam(required = false) String genre,
             @RequestParam(name = "from", required = false) Integer publicationFrom,
-            @RequestParam(name = "to", required = false) Integer publicationTo
+            @RequestParam(name = "to", required = false) Integer publicationTo,
+            @RequestParam(name = "sort", required = false) String sortParams
     ) {
         logger.info("Accessed by client: " + clientId);
 
-        Page<BookResponse> bookResponsePage = bookService.getAllBooks(authorId, genre, publicationFrom, publicationTo);
+        Page<BookResponse> bookResponsePage = bookService.getAllBooks(authorId, genre, publicationFrom, publicationTo, sortParams);
 
         ResponseEntity<PagedResponse<BookResponse>> responseEntity = new ResponseEntity<>(PagedResponse.from(bookResponsePage), HttpStatus.OK);
         responseEntity.getHeaders().add("X-Total-Count", String.valueOf(bookResponsePage.getTotalElements()));

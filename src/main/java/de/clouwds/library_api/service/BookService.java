@@ -4,6 +4,7 @@ import de.clouwds.library_api.dto.BookPatchRequest;
 import de.clouwds.library_api.dto.BookRequest;
 import de.clouwds.library_api.dto.BookResponse;
 import de.clouwds.library_api.exception.ConflictException;
+import de.clouwds.library_api.exception.InvalidRequestException;
 import de.clouwds.library_api.exception.ResourceNotFoundException;
 import de.clouwds.library_api.model.Author;
 import de.clouwds.library_api.model.Book;
@@ -13,11 +14,21 @@ import de.clouwds.library_api.specification.BookSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Service
 public class BookService {
+
+    private static final Map<String, String> SORTABLE_FIELDS = Map.of(
+            "title", "title",
+            "genre", "genre",
+            "publicationYear", "publicationYear",
+            "author", "author.name"
+    );
 
     BookRepository bookRepository;
     AuthorRepository authorRepository;
@@ -27,11 +38,7 @@ public class BookService {
         this.authorRepository = authorRepository;
     }
 
-    //TODO:
-    //Pagination (page), Size (size), Sorting (sort)
-    //Return all boooks
-
-    public Page<BookResponse> getAllBooks(Long authorId, String genre, Integer publicationFrom, Integer publicationTo) {
+    public Page<BookResponse> getAllBooks(Long authorId, String genre, Integer publicationFrom, Integer publicationTo, String sortParams) {
         Specification<Book> specification = Specification.unrestricted();
 
         if(authorId != null) {
@@ -46,7 +53,7 @@ public class BookService {
             specification = specification.and(BookSpecifications.publicationYearBetween(publicationFrom, publicationTo));
         }
 
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10, parseSort(sortParams));
 
         Page<Book> bookPage = bookRepository.findAll(specification, pageable);
         return bookPage.map(book -> new BookResponse(
@@ -60,6 +67,26 @@ public class BookService {
         ));
     }
 
+    private Sort parseSort(String sortParams) {
+        if (sortParams == null || sortParams.isBlank()) {
+            return Sort.unsorted();
+        }
+
+        String[] sortParamsSplit = sortParams.split(",");
+        String propertyName = sortParamsSplit[0];
+
+        if (!SORTABLE_FIELDS.containsKey(propertyName)) {
+            throw new InvalidRequestException("Cannot sort by '" + propertyName + "' - allowed fields: " + SORTABLE_FIELDS.keySet());
+        }
+
+        Sort.Direction sortDirection = Sort.DEFAULT_DIRECTION;
+        if (sortParamsSplit.length > 1) {
+            sortDirection = Sort.Direction.fromString(sortParamsSplit[1]);
+        }
+
+        return Sort.by(sortDirection, SORTABLE_FIELDS.get(propertyName));
+    }
+
     public Book findBookById(long id) {
         return bookRepository.findById(id).orElse(null);
     }
@@ -70,8 +97,6 @@ public class BookService {
 
     /*
     TODO:
-    - filter
-    - sort
     - pagination (page, size)
     */
     public Book createBook(BookRequest request) {

@@ -32,4 +32,12 @@ public class HttpExceptionHandler {
                 e.getMessage()
         );
     }
+
+    @ExceptionHandler(InvalidRequestException.class)
+    public ProblemDetail handleInvalidRequest(InvalidRequestException e) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                e.getMessage()
+        );
+    }
 }

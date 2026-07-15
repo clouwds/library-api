@@ -3,6 +3,7 @@ package de.clouwds.library_api.controller;
 import de.clouwds.library_api.dto.BookPatchRequest;
 import de.clouwds.library_api.dto.BookRequest;
 import de.clouwds.library_api.dto.BookResponse;
+import de.clouwds.library_api.dto.PagedResponse;
 import de.clouwds.library_api.model.Book;
 import de.clouwds.library_api.service.BookService;
 import jakarta.validation.Valid;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -30,7 +30,7 @@ public class BookController {
     }
 
     @GetMapping("/books")
-    public ResponseEntity<Page<BookResponse>> getAllBooks(
+    public ResponseEntity<PagedResponse<BookResponse>> getAllBooks(
             @RequestHeader(value = "X-Client-Id", required = false) String clientId,
             @RequestParam(required = false) Long authorId,
             @RequestParam(required = false) String genre,
@@ -41,7 +41,7 @@ public class BookController {
 
         Page<BookResponse> bookResponsePage = bookService.getAllBooks(authorId, genre, publicationFrom, publicationTo);
 
-        ResponseEntity<Page<BookResponse>> responseEntity = new ResponseEntity<>(bookResponsePage, HttpStatus.OK);
+        ResponseEntity<PagedResponse<BookResponse>> responseEntity = new ResponseEntity<>(PagedResponse.from(bookResponsePage), HttpStatus.OK);
         responseEntity.getHeaders().add("X-Total-Count", String.valueOf(bookResponsePage.getTotalElements()));
         return responseEntity;
     }

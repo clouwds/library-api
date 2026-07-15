@@ -16,9 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Service
 public class BookService {
 
@@ -52,7 +49,7 @@ public class BookService {
         Pageable pageable = PageRequest.of(0, 10);
 
         Page<Book> bookPage = bookRepository.findAll(specification, pageable);
-        Page<BookResponse> bookResponsePage = bookPage.map(book -> new BookResponse(
+        return bookPage.map(book -> new BookResponse(
                 book.getId(),
                 book.getTitle(),
                 book.getGenre(),
@@ -61,8 +58,6 @@ public class BookService {
                 book.getIsbn(),
                 book.getAuthor().getName()
         ));
-
-        return bookResponsePage;
     }
 
     public Book findBookById(long id) {

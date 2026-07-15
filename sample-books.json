@@ -1,0 +1,42 @@
+[
+  {
+    "title": "1984",
+    "genre": "Dystopian",
+    "publicationYear": 1949,
+    "available": true,
+    "isbn": "9780451524935",
+    "author": { "id": 1, "name": "George Orwell" }
+  },
+  {
+    "title": "Animal Farm",
+    "genre": "Satire",
+    "publicationYear": 1945,
+    "available": true,
+    "isbn": "9780451526342",
+    "author": { "id": 1, "name": "George Orwell" }
+  },
+  {
+    "title": "The Left Hand of Darkness",
+    "genre": "Science Fiction",
+    "publicationYear": 1969,
+    "available": true,
+    "isbn": "9780441478125",
+    "author": { "id": 51, "name": "Ursula K. Le Guin" }
+  },
+  {
+    "title": "A Wizard of Earthsea",
+    "genre": "Fantasy",
+    "publicationYear": 1968,
+    "available": false,
+    "isbn": "9780553262506",
+    "author": { "id": 51, "name": "Ursula K. Le Guin" }
+  },
+  {
+    "title": "Foundation",
+    "genre": "Science Fiction",
+    "publicationYear": 1951,
+    "available": true,
+    "isbn": "9780553293357",
+    "author": { "id": 101, "name": "Isaac Asimov" }
+  }
+]

@@ -2,12 +2,14 @@ package de.clouwds.library_api.controller;
 
 import de.clouwds.library_api.dto.AuthorPatchRequest;
 import de.clouwds.library_api.dto.AuthorRequest;
-import de.clouwds.library_api.model.Author;
+import de.clouwds.library_api.dto.AuthorResponse;
 import de.clouwds.library_api.service.AuthorService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.ArrayList;
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -21,41 +23,41 @@ public class AuthorController {
     }
 
     @GetMapping("/authors")
-    public List<Author> getAllAuthors() {
-        //Return all authors
+    public List<AuthorResponse> getAllAuthors() {
         return authorService.getAllAuthors();
     }
 
     @GetMapping("/authors/{id}")
-    public Author findAuthorById(long id) {
-        //find by id
+    public AuthorResponse findAuthorById(@PathVariable long id) {
         return authorService.findAuthorById(id);
     }
 
     @PostMapping("/authors")
-    public void createAuthor(@Valid @RequestBody AuthorRequest request) {
-        //create author
-        authorService.createAuthor(request);
+    public ResponseEntity<AuthorResponse> createAuthor(@Valid @RequestBody AuthorRequest request) {
+        AuthorResponse author = authorService.createAuthor(request);
+
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(author.id())
+                .toUri();
+
+        return ResponseEntity.created(location).body(author);
     }
 
     @PutMapping("/authors/{id}")
-    public void updateAuthor(@Valid @RequestBody AuthorRequest request, long id) {
-        //update author
-        authorService.updateAuthor(request, id);
+    public ResponseEntity<AuthorResponse> updateAuthor(@Valid @RequestBody AuthorRequest request, @PathVariable long id) {
+        return ResponseEntity.ok(authorService.updateAuthor(request, id));
     }
 
     @PatchMapping("/authors/{id}")
-    public void patchAuthor(@Valid @RequestBody AuthorPatchRequest request, @PathVariable long id) {
-        //patch author
-        authorService.patchAuthor(request, id);
+    public ResponseEntity<AuthorResponse> patchAuthor(@Valid @RequestBody AuthorPatchRequest request, @PathVariable long id) {
+        return ResponseEntity.ok(authorService.patchAuthor(request, id));
     }
 
     @DeleteMapping("/authors/{id}")
-    public void deleteAuthor(long id) {
-        //patch author
+    public ResponseEntity<Void> deleteAuthor(@PathVariable long id) {
         authorService.deleteAuthor(id);
+        return ResponseEntity.noContent().build();
     }
-
-
 
 }

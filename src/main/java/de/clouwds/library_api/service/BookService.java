@@ -38,7 +38,7 @@ public class BookService {
         this.authorRepository = authorRepository;
     }
 
-    public Page<BookResponse> getAllBooks(Long authorId, String genre, Integer publicationFrom, Integer publicationTo, String sortParams) {
+    public Page<BookResponse> getAllBooks(Long authorId, String genre, Integer publicationFrom, Integer publicationTo, String sortParams, int page, int size) {
         Specification<Book> specification = Specification.unrestricted();
 
         if(authorId != null) {
@@ -53,18 +53,10 @@ public class BookService {
             specification = specification.and(BookSpecifications.publicationYearBetween(publicationFrom, publicationTo));
         }
 
-        Pageable pageable = PageRequest.of(0, 10, parseSort(sortParams));
+        Pageable pageable = PageRequest.of(page, size, parseSort(sortParams));
 
         Page<Book> bookPage = bookRepository.findAll(specification, pageable);
-        return bookPage.map(book -> new BookResponse(
-                book.getId(),
-                book.getTitle(),
-                book.getGenre(),
-                book.getPublicationYear(),
-                book.isAvailable(),
-                book.getIsbn(),
-                book.getAuthor().getName()
-        ));
+        return bookPage.map(this::toBookResponse);
     }
 
     private Sort parseSort(String sortParams) {
@@ -87,19 +79,28 @@ public class BookService {
         return Sort.by(sortDirection, SORTABLE_FIELDS.get(propertyName));
     }
 
-    public Book findBookById(long id) {
-        return bookRepository.findById(id).orElse(null);
+    private BookResponse toBookResponse(Book book) {
+        return new BookResponse(
+                book.getId(),
+                book.getTitle(),
+                book.getGenre(),
+                book.getPublicationYear(),
+                book.isAvailable(),
+                book.getIsbn(),
+                book.getAuthor().getName()
+        );
+    }
+
+    public BookResponse findBookById(long id) {
+        Book book = bookRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Book not found - Id: " + id));
+        return toBookResponse(book);
     }
 
     boolean existsByIsbn(String isbn) {
         return bookRepository.findByIsbn(isbn) != null;
     }
 
-    /*
-    TODO:
-    - pagination (page, size)
-    */
-    public Book createBook(BookRequest request) {
+    public BookResponse createBook(BookRequest request) {
         if(existsByIsbn(request.isbn())) {
             throw new ConflictException("Book with ISBN " + request.isbn() + " already exists");
         }
@@ -110,60 +111,51 @@ public class BookService {
         book.setPublicationYear(request.publicationYear());
         book.setIsbn(request.isbn());
         book.setAvailable(request.available());
-        return bookRepository.save(book);
+        return toBookResponse(bookRepository.save(book));
     }
 
-    public void updateBook(BookRequest request, long id) {
-        /*
-         only update if book already exists, otherwise new book with non-server
-         generated id will be created that might lead to id inconsistencies in the future
-        */
-        Book book = bookRepository.findById(id).orElse(null);
+    public BookResponse updateBook(BookRequest request, long id) {
+        Book book = bookRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Book not found - Id: " + id));
 
-        if (book != null) {
-            Author author = authorRepository.findById(request.authorId()).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + request.authorId()));
+        Author author = authorRepository.findById(request.authorId()).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + request.authorId()));
+        book.setTitle(request.title());
+        book.setGenre(request.genre());
+        book.setPublicationYear(request.publicationYear());
+        book.setIsbn(request.isbn());
+        book.setAvailable(request.available());
+        book.setAuthor(author);
+        return toBookResponse(bookRepository.save(book));
+    }
+
+    public BookResponse patchBook(BookPatchRequest request, long id) {
+        Book book = bookRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Book not found - Id: " + id));
+
+        if (request.title() != null) {
             book.setTitle(request.title());
+        }
+        if (request.genre() != null) {
             book.setGenre(request.genre());
+        }
+        if (request.publicationYear() != null) {
             book.setPublicationYear(request.publicationYear());
-            book.setIsbn(request.isbn());
+        }
+        if (request.available() != null) {
             book.setAvailable(request.available());
+        }
+        if (request.isbn() != null) {
+            book.setIsbn(request.isbn());
+        }
+        if (request.authorId() != null) {
+            Author author = authorRepository.findById(request.authorId()).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + request.authorId()));
             book.setAuthor(author);
-            bookRepository.save(book);
         }
-    }
-
-    public void patchBook(BookPatchRequest request, long id) {
-        /*
-         only update if book already exists, otherwise new book with non-server
-         generated id will be created that might lead to id inconsistencies in the future
-        */
-        Book book = bookRepository.findById(id).orElse(null);
-
-        if (book != null) {
-            if (request.title() != null) {
-                book.setTitle(request.title());
-            }
-            if (request.genre() != null) {
-                book.setGenre(request.genre());
-            }
-            if (request.publicationYear() != null) {
-                book.setPublicationYear(request.publicationYear());
-            }
-            if (request.available() != null) {
-                book.setAvailable(request.available());
-            }
-            if (request.isbn() != null) {
-                book.setIsbn(request.isbn());
-            }
-            if (request.authorId() != null) {
-                Author author = authorRepository.findById(request.authorId()).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + request.authorId()));
-                book.setAuthor(author);
-            }
-            bookRepository.save(book);
-        }
+        return toBookResponse(bookRepository.save(book));
     }
 
     public void deleteBook(long id) {
+        if (!bookRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Book not found - Id: " + id);
+        }
         bookRepository.deleteById(id);
     }
 }

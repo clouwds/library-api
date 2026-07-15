@@ -2,10 +2,10 @@ package de.clouwds.library_api.service;
 
 import de.clouwds.library_api.dto.AuthorPatchRequest;
 import de.clouwds.library_api.dto.AuthorRequest;
+import de.clouwds.library_api.dto.AuthorResponse;
 import de.clouwds.library_api.exception.ResourceNotFoundException;
 import de.clouwds.library_api.model.Author;
 import de.clouwds.library_api.repository.AuthorRepository;
-import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,45 +19,45 @@ public class AuthorService {
         this.authorRepository = authorRepository;
     }
 
-    public List<Author> getAllAuthors() {
-        return authorRepository.findAll();
+    private AuthorResponse toAuthorResponse(Author author) {
+        return new AuthorResponse(author.getId(), author.getName());
     }
 
-    public Author findAuthorById(long id) {
-        return authorRepository.findById(id).orElse(null);
+    public List<AuthorResponse> getAllAuthors() {
+        return authorRepository.findAll().stream().map(this::toAuthorResponse).toList();
     }
 
-    public void createAuthor(AuthorRequest request) {
+    public AuthorResponse findAuthorById(long id) {
+        Author author = authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + id));
+        return toAuthorResponse(author);
+    }
+
+    public AuthorResponse createAuthor(AuthorRequest request) {
         Author author = new Author();
         author.setName(request.name());
-        authorRepository.save(author);
+        return toAuthorResponse(authorRepository.save(author));
     }
 
-    public void updateAuthor(AuthorRequest request, long id) {
-        /*
-         only update if author already exists, otherwise new author with non-server
-         generated id will be created that might lead to id inconsistencies in the future
-        */
+    public AuthorResponse updateAuthor(AuthorRequest request, long id) {
         Author author = authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + id));
         author.setName(request.name());
-        authorRepository.save(author);
+        return toAuthorResponse(authorRepository.save(author));
     }
 
-    public void patchAuthor(AuthorPatchRequest request, long id) {
-        /*
-         only update if author already exists, otherwise new author with non-server
-         generated id will be created that might lead to id inconsistencies in the future
-        */
+    public AuthorResponse patchAuthor(AuthorPatchRequest request, long id) {
         Author author = authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + id));
 
         if (request.name() != null) {
             author.setName(request.name());
         }
 
-        authorRepository.save(author);
+        return toAuthorResponse(authorRepository.save(author));
     }
 
     public void deleteAuthor(long id) {
+        if (!authorRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Author not found - Id: " + id);
+        }
         authorRepository.deleteById(id);
     }
 }

@@ -20,7 +20,7 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
 
 - [x] Full CRUD for `Book`: `GET /books/{id}`, `GET /books`, `POST /books`, `PUT /books/{id}`, `PATCH /books/{id}`, `DELETE /books/{id}`
 - [x] Full CRUD for `Author`
-- [ ] `GET /books` supports query params: filter by author, genre, publication-year range; plus pagination (`page`, `size`) and sorting (`sort`)
+- [x] `GET /books` supports query params: filter by author, genre, publication-year range; plus pagination (`page`, `size`) and sorting (`sort`)
 - [x] `POST /books` returns `201 Created` with a `Location` header pointing at the new resource
 - [x] `GET /books` sets a custom response header (e.g. `X-Total-Count`) with the total match count
 - [x] At least one endpoint reads a custom request header (e.g. `X-Client-Id`) and reflects/logs it

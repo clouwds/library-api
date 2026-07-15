@@ -11,6 +11,7 @@ public class Author {
     private Long id;
 
     @NotBlank
+    @Column(nullable = false)
     private String name;
 
     public Author() {}

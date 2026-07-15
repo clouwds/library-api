@@ -3,8 +3,6 @@ package de.clouwds.library_api.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
-import java.util.Objects;
-
 @Entity
 public class Book {
 
@@ -13,16 +11,18 @@ public class Book {
     private Long id;
 
     @NotBlank
+    @Column(nullable = false)
     private String title;
 
     @NotBlank
+    @Column(nullable = false)
     private String genre;
 
     private int publicationYear;
 
     private boolean available = true;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String isbn;
 
     @ManyToOne
@@ -97,16 +97,5 @@ public class Book {
                 ", author=" + author +
                 ", id=" + id +
                 '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Book book)) return false;
-        return getPublicationYear() == book.getPublicationYear() && isAvailable() == book.isAvailable() && Objects.equals(getTitle(), book.getTitle()) && Objects.equals(getGenre(), book.getGenre()) && Objects.equals(getIsbn(), book.getIsbn()) && Objects.equals(getAuthor(), book.getAuthor());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getTitle(), getGenre(), getPublicationYear(), isAvailable(), getIsbn(), getAuthor());
     }
 }

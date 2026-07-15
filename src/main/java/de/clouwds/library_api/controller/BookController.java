@@ -8,6 +8,7 @@ import de.clouwds.library_api.service.BookService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,23 +30,19 @@ public class BookController {
     }
 
     @GetMapping("/books")
-    public ResponseEntity<List<BookResponse>> getAllBooks(
+    public ResponseEntity<Page<BookResponse>> getAllBooks(
             @RequestHeader(value = "X-Client-Id", required = false) String clientId,
             @RequestParam(required = false) Long authorId,
             @RequestParam(required = false) String genre,
             @RequestParam(name = "from", required = false) Integer publicationFrom,
             @RequestParam(name = "to", required = false) Integer publicationTo
     ) {
-        //filter by author, genre, publication-year-range
-        //Paging (page), Size (size), Sorting (sort)
-        //Return all boooks
-
         logger.info("Accessed by client: " + clientId);
 
-        List<BookResponse> bookResponseList = bookService.getAllBooks(authorId, genre, publicationFrom, publicationTo);
+        Page<BookResponse> bookResponsePage = bookService.getAllBooks(authorId, genre, publicationFrom, publicationTo);
 
-        ResponseEntity<List<BookResponse>> responseEntity = new ResponseEntity<>(bookResponseList, HttpStatus.OK);
-        responseEntity.getHeaders().add("X-Total-Count", String.valueOf(bookResponseList.size()));
+        ResponseEntity<Page<BookResponse>> responseEntity = new ResponseEntity<>(bookResponsePage, HttpStatus.OK);
+        responseEntity.getHeaders().add("X-Total-Count", String.valueOf(bookResponsePage.getTotalElements()));
         return responseEntity;
     }
 

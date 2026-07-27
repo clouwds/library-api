@@ -30,10 +30,18 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
 
 ## Phase 2 — Persistence depth
 
-- [ ] `Member` entity (a library member/borrower)
-- [ ] `Loan` entity linking `Member` and `Book`, with borrow date / due date / return date
-- [ ] At least one derived-query repository method (e.g. `findByReturnDateIsNull`)
-- [ ] At least one custom `@Query` (JPQL or native)
+- [x] `Member` entity (a library member/borrower)
+- [x] `Loan` entity linking `Member` and `Book`, with borrow date / due date / return date
+- [x] Derived-query repository methods on `LoanRepository`:
+  - [x] `findByReturnDateIsNull()`
+  - [x] `findByMemberId(Long memberId)`
+  - [x] `findByDueDateBeforeAndReturnDateIsNull(LocalDate date)`
+- [x] Custom `@Query` (JPQL or native), e.g.:
+  - [x] Count of currently-borrowed books per member
+  - [x] Most-borrowed book titles overall
+  - [x] Books currently on loan by a given author (join `Loan` → `Book` → `Author`)
+- [x] `GET /loans/overdue`
+- [x] `GET /members/{id}/loans`
 - [ ] A `@Transactional` "borrow a book" operation that checks availability and updates state atomically (no double-borrowing)
 - [ ] Replace `ddl-auto=update` with Flyway migrations
 

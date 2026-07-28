@@ -63,6 +63,22 @@ public class LoanService {
                 .toList();
     }
 
+    // method exists as example for pessimistic locking scenario, together with@Lock on findByIdForUpdate in BookRepository
+    @Transactional
+    public LoanResponse borrowBookPessimistic(LoanRequest loanRequest) {
+        Long memberId = loanRequest.memberId();
+        Long bookId = loanRequest.bookId();
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + memberId));
+        Book book = bookRepository.findByIdForUpdate(bookId).orElseThrow(() -> new ResourceNotFoundException("Book not found - Id: " + bookId));
+
+        if(!book.isAvailable()) {
+            throw new ConflictException("Book is not available - Id: "  + bookId);
+        }
+
+        book.setAvailable(false);
+        return toLoanResponse(createLoan(book, member));
+    }
+
     @Transactional
     public LoanResponse borrowBookOptimistic(LoanRequest loanRequest) {
         Long memberId = loanRequest.memberId();

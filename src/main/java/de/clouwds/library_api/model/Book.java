@@ -10,6 +10,13 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
+    /*
+    needed for optimistic lock during book borrow operation
+    once it's there, every update path to Book gets version-checked
+    */
+    @Version
+    private Integer version;
+
     @NotBlank
     @Column(nullable = false)
     private String title;
@@ -36,6 +43,14 @@ public class Book {
 
     public Long getId() {
         return id;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public String getTitle() {

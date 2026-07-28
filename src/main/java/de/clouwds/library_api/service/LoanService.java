@@ -1,18 +1,20 @@
 package de.clouwds.library_api.service;
 
+import de.clouwds.library_api.dto.LoanRequest;
 import de.clouwds.library_api.dto.LoanResponse;
+import de.clouwds.library_api.exception.ConflictException;
 import de.clouwds.library_api.exception.ResourceNotFoundException;
 import de.clouwds.library_api.model.Book;
 import de.clouwds.library_api.model.Loan;
+import de.clouwds.library_api.model.Member;
 import de.clouwds.library_api.repository.BookRepository;
 import de.clouwds.library_api.repository.LoanRepository;
 import de.clouwds.library_api.repository.MemberRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class LoanService {
@@ -25,6 +27,11 @@ public class LoanService {
         this.loanRepository = loanRepository;
         this.bookRepository = bookRepository;
         this.memberRepository = memberRepository;
+    }
+
+    private Loan createLoan(Book book, Member member) {
+        Loan loan = new Loan(member, book, LocalDate.now(), LocalDate.now().plusWeeks(2));
+        return loanRepository.save(loan);
     }
 
     private LoanResponse toLoanResponse(Loan loan) {
@@ -55,4 +62,38 @@ public class LoanService {
                 .map(this::toLoanResponse)
                 .toList();
     }
+
+    @Transactional
+    public LoanResponse borrowBookOptimistic(LoanRequest loanRequest) {
+        Long memberId = loanRequest.memberId();
+        Long bookId = loanRequest.bookId();
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + memberId));
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new ResourceNotFoundException("Book not found - Id: " + bookId));
+
+        if(!book.isAvailable()) {
+            throw new ConflictException("Book is not available - Id: "  + bookId);
+        }
+
+        book.setAvailable(false);
+        return toLoanResponse(createLoan(book, member));
+    }
+
+
+    @Transactional
+    public LoanResponse returnBook(Long loanId) {
+        Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found - Id: " + loanId));
+
+        if (loan.getReturnDate() != null) {
+            throw new ConflictException("Loan already returned - Id: " + loanId);
+        }
+
+        loan.setReturnDate(LocalDate.now());
+
+        Book book = loan.getBook();
+        book.setAvailable(true);
+        bookRepository.save(book);
+
+        return toLoanResponse(loanRepository.save(loan));
+    }
+
 }

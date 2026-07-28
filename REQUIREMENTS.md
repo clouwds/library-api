@@ -42,7 +42,7 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] Books currently on loan by a given author (join `Loan` → `Book` → `Author`)
 - [x] `GET /loans/overdue`
 - [x] `GET /members/{id}/loans`
-- [ ] A `@Transactional` "borrow a book" operation that checks availability and updates state atomically (no double-borrowing)
+- [x] A `@Transactional` "borrow a book" operation that checks availability and updates state atomically (no double-borrowing)
 - [ ] Replace `ddl-auto=update` with Flyway migrations
 
 ## Phase 3 — Session-based security

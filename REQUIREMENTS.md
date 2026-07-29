@@ -47,7 +47,13 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
 
 ## Phase 3 — Session-based security
 
-- [ ] Add Spring Security; form-based login/logout with `HttpSession`
+- [x] Add Spring Security; form-based login/logout with `HttpSession`:
+  - [x] Custom `SecurityConfig` (`@Configuration` + `SecurityFilterChain` bean) replacing the property-based zero-config defaults
+  - [x] `authorizeHttpRequests(...)` explicitly deciding which endpoints are public vs require authentication (everything currently requires auth by default)
+  - [x] `.formLogin(...)` configured explicitly, with a sensible `defaultSuccessUrl` (default redirect target `/` 404s, since this API has no root page)
+  - [x] `.logout(...)` configured explicitly, confirming `/logout` invalidates the `HttpSession`
+  - [x] Verify the full session lifecycle: login sets a session cookie, a protected endpoint is reachable while the session is valid, logout invalidates it and the same endpoint requires login again
+- [ ] Custom error page/handler so unmapped routes and errors don't fall through to the Whitelabel Error Page
 - [ ] `Member` (or a separate `User`) entity has a role: `MEMBER` / `LIBRARIAN`
 - [ ] Passwords hashed with BCrypt
 - [ ] CSRF protection left enabled; demonstrate the token round-trip (e.g. a documented curl sequence or a test)

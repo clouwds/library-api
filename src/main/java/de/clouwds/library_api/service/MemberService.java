@@ -3,6 +3,7 @@ package de.clouwds.library_api.service;
 import de.clouwds.library_api.dto.MemberPatchRequest;
 import de.clouwds.library_api.dto.MemberRequest;
 import de.clouwds.library_api.dto.MemberResponse;
+import de.clouwds.library_api.exception.ConflictException;
 import de.clouwds.library_api.exception.ResourceNotFoundException;
 import de.clouwds.library_api.model.Member;
 import de.clouwds.library_api.repository.MemberRepository;
@@ -20,7 +21,7 @@ public class MemberService {
     }
 
     private MemberResponse toMemberResponse(Member member) {
-        return new MemberResponse(member.getId(), member.getFirstName(), member.getLastName(), member.getRole());
+        return new MemberResponse(member.getId(), member.getFirstName(), member.getLastName(), member.getEmail(), member.getRole());
     }
 
     public List<MemberResponse> getAllMembers() {
@@ -33,7 +34,10 @@ public class MemberService {
     }
 
     public MemberResponse createMember(MemberRequest request) {
-        Member member = new Member(request.firstName(), request.lastName(), request.role());
+        if (memberRepository.existsByEmail(request.email())) {
+            throw new ConflictException("Member with email " + request.email() + " already exists");
+        }
+        Member member = new Member(request.firstName(), request.lastName(), request.email(), request.password(), request.role());
         return toMemberResponse(memberRepository.save(member));
     }
 
@@ -41,6 +45,8 @@ public class MemberService {
         Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
         member.setFirstName(request.firstName());
         member.setLastName(request.lastName());
+        member.setEmail(request.email());
+        member.setPassword(request.password());
         member.setRole(request.role());
         return toMemberResponse(memberRepository.save(member));
     }
@@ -53,6 +59,12 @@ public class MemberService {
         }
         if (request.lastName() != null) {
             member.setLastName(request.lastName());
+        }
+        if (request.email() != null) {
+            member.setEmail(request.email());
+        }
+        if (request.password() != null) {
+            member.setPassword(request.password());
         }
         if (request.role() != null) {
             member.setRole(request.role());

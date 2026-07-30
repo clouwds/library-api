@@ -53,10 +53,21 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] `.formLogin(...)` configured explicitly, with a sensible `defaultSuccessUrl` (default redirect target `/` 404s, since this API has no root page)
   - [x] `.logout(...)` configured explicitly, confirming `/logout` invalidates the `HttpSession`
   - [x] Verify the full session lifecycle: login sets a session cookie, a protected endpoint is reachable while the session is valid, logout invalidates it and the same endpoint requires login again
-- [ ] `Member` (or a separate `User`) entity has a role: `MEMBER` / `LIBRARIAN`
-- [ ] Passwords hashed with BCrypt
+- [x] `Member` (or a separate `User`) entity has a role: `MEMBER` / `LIBRARIAN`:
+  - [x] `Role` enum (`MEMBER`/`LIBRARIAN`) added to `Member`, mapped via `@Enumerated(EnumType.STRING)`
+  - [x] `Member` needs an actual login identifier to be authenticatable against — `firstName`/`lastName` can collide and aren't meant for login; add a unique field (`email` or `username`) plus a `password` field
+- [ ] Passwords hashed with BCrypt:
+  - [ ] `BCryptPasswordEncoder` bean in `SecurityConfig`
+  - [ ] Hash the password in `MemberService.createMember` before persisting — never store it plain
+  - [x] Never expose `password` in `MemberResponse` (or any response DTO)
+- [ ] Custom `UserDetailsService`/`AuthenticationProvider` backed by `Member`, replacing the property-based test user so real login authenticates against the database:
+  - [ ] `UserDetailsService` implementation that loads a `Member` by its login identifier via `MemberRepository`
+  - [ ] Map `Member.role` to a Spring Security `GrantedAuthority` (`ROLE_MEMBER`/`ROLE_LIBRARIAN`)
+  - [ ] Wire it into `SecurityConfig` so the `AuthenticationManager` actually uses it
+  - [ ] Remove `spring.security.user.*` from `application.properties` once real login against the `Member` table works
+  - [ ] Verify: login with real `Member` credentials from the database succeeds; the old property-based test user credentials no longer work
 - [ ] CSRF protection left enabled; demonstrate the token round-trip (e.g. a documented curl sequence or a test)
-- [ ] Method-level security: only `LIBRARIAN` can `DELETE /books/{id}`, only the owning `MEMBER` (or a `LIBRARIAN`) can see their own loans
+- [ ] Method-level security: only `LIBRARIAN` can `DELETE /books/{id}`, only the owning `MEMBER` (or a `LIBRARIAN`) can see their own loans (depends on the DB-backed roles above actually being in effect)
 
 ## Phase 4 — Stateless JWT security
 

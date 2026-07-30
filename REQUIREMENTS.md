@@ -53,7 +53,6 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] `.formLogin(...)` configured explicitly, with a sensible `defaultSuccessUrl` (default redirect target `/` 404s, since this API has no root page)
   - [x] `.logout(...)` configured explicitly, confirming `/logout` invalidates the `HttpSession`
   - [x] Verify the full session lifecycle: login sets a session cookie, a protected endpoint is reachable while the session is valid, logout invalidates it and the same endpoint requires login again
-- [ ] Custom error page/handler so unmapped routes and errors don't fall through to the Whitelabel Error Page
 - [ ] `Member` (or a separate `User`) entity has a role: `MEMBER` / `LIBRARIAN`
 - [ ] Passwords hashed with BCrypt
 - [ ] CSRF protection left enabled; demonstrate the token round-trip (e.g. a documented curl sequence or a test)
@@ -69,6 +68,11 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
 
 ## Phase 5 — Cross-cutting concerns
 
+- [ ] Custom error page/handler so unmapped routes and errors don't fall through to the Whitelabel Error Page:
+  - [ ] A custom browser-facing (HTML) error page — e.g. a static `error/4xx.html`/`error/5xx.html` under Spring Boot's default error-page resource location, or a custom `ErrorController` — so a browser hitting an unmapped route (or the login flow ending up somewhere unexpected) shows a clean page, not the Whitelabel default
+  - [ ] Confirm API clients (`Accept: application/json`) still get a structured JSON error body for the same unmapped-route/error cases, not HTML — verify Spring Boot's content-negotiation-aware default `/error` behavior, extending `HttpExceptionHandler` only if it doesn't already do this
+  - [ ] A catch-all `@ExceptionHandler(Exception.class)` in `HttpExceptionHandler` for genuinely unexpected/unhandled exceptions, returning a generic `500` `ProblemDetail` instead of leaking a stack trace or falling through to the Whitelabel page
+  - [ ] Verify both paths: `GET` an unmapped route in a browser → custom page, not Whitelabel; same request via curl/Postman with `Accept: application/json` → clean JSON, not HTML
 - [ ] `@Aspect` that logs execution time of service-layer methods
 - [ ] Spring Boot Actuator enabled (`health`, `info`, `metrics`); non-trivial endpoints secured/restricted to `LIBRARIAN`
 - [ ] CORS configured for a specific allowed origin (simulate a frontend)

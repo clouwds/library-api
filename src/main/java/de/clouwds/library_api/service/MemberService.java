@@ -20,7 +20,7 @@ public class MemberService {
     }
 
     private MemberResponse toMemberResponse(Member member) {
-        return new MemberResponse(member.getId(), member.getFirstName(), member.getLastName());
+        return new MemberResponse(member.getId(), member.getFirstName(), member.getLastName(), member.getRole());
     }
 
     public List<MemberResponse> getAllMembers() {
@@ -33,9 +33,7 @@ public class MemberService {
     }
 
     public MemberResponse createMember(MemberRequest request) {
-        Member member = new Member();
-        member.setFirstName(request.firstName());
-        member.setLastName(request.lastName());
+        Member member = new Member(request.firstName(), request.lastName(), request.role());
         return toMemberResponse(memberRepository.save(member));
     }
 
@@ -43,6 +41,7 @@ public class MemberService {
         Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
         member.setFirstName(request.firstName());
         member.setLastName(request.lastName());
+        member.setRole(request.role());
         return toMemberResponse(memberRepository.save(member));
     }
 
@@ -54,6 +53,9 @@ public class MemberService {
         }
         if (request.lastName() != null) {
             member.setLastName(request.lastName());
+        }
+        if (request.role() != null) {
+            member.setRole(request.role());
         }
 
         return toMemberResponse(memberRepository.save(member));

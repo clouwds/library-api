@@ -1,11 +1,8 @@
 package de.clouwds.library_api.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 public class Member {
@@ -22,7 +19,18 @@ public class Member {
     @Column(nullable = false)
     private String lastName;
 
+    @NotNull
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
     public Member() {}
+
+    public Member(String firstName, String lastName, Role role) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.role = role;
+    }
 
     public Long getId() {
         return id;
@@ -42,5 +50,13 @@ public class Member {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

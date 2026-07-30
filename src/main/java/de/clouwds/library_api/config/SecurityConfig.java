@@ -21,7 +21,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable);
+        //http.csrf(AbstractHttpConfigurer::disable);
         //Todo: maybe custom success Handler (SavedRequestAwareAuthenticationSuccessHandler)
         http.formLogin(form -> form
                 .usernameParameter("email")

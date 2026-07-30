@@ -3,10 +3,14 @@ package de.clouwds.library_api.service;
 import de.clouwds.library_api.dto.MemberPatchRequest;
 import de.clouwds.library_api.dto.MemberRequest;
 import de.clouwds.library_api.dto.MemberResponse;
+import de.clouwds.library_api.dto.MemberUpdateRequest;
+import de.clouwds.library_api.dto.PasswordUpdateRequest;
 import de.clouwds.library_api.exception.ConflictException;
 import de.clouwds.library_api.exception.ResourceNotFoundException;
 import de.clouwds.library_api.model.Member;
 import de.clouwds.library_api.repository.MemberRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,8 +20,11 @@ public class MemberService {
 
     MemberRepository memberRepository;
 
-    public MemberService(MemberRepository memberRepository) {
+    PasswordEncoder passwordEncoder;
+
+    public MemberService(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     private MemberResponse toMemberResponse(Member member) {
@@ -37,18 +44,29 @@ public class MemberService {
         if (memberRepository.existsByEmail(request.email())) {
             throw new ConflictException("Member with email " + request.email() + " already exists");
         }
-        Member member = new Member(request.firstName(), request.lastName(), request.email(), request.password(), request.role());
+
+        Member member = new Member(
+                request.firstName(),
+                request.lastName(),
+                request.email(),
+                passwordEncoder.encode(request.password()),
+                request.role());
         return toMemberResponse(memberRepository.save(member));
     }
 
-    public MemberResponse updateMember(MemberRequest request, long id) {
+    public MemberResponse updateMember(MemberUpdateRequest request, long id) {
         Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
         member.setFirstName(request.firstName());
         member.setLastName(request.lastName());
         member.setEmail(request.email());
-        member.setPassword(request.password());
         member.setRole(request.role());
         return toMemberResponse(memberRepository.save(member));
+    }
+
+    public void updatePassword(long id, PasswordUpdateRequest request) {
+        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
+        member.setPassword(passwordEncoder.encode(request.password()));
+        memberRepository.save(member);
     }
 
     public MemberResponse patchMember(MemberPatchRequest request, long id) {
@@ -64,7 +82,7 @@ public class MemberService {
             member.setEmail(request.email());
         }
         if (request.password() != null) {
-            member.setPassword(request.password());
+            member.setPassword(passwordEncoder.encode(request.password()));
         }
         if (request.role() != null) {
             member.setRole(request.role());

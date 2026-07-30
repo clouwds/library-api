@@ -56,9 +56,9 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
 - [x] `Member` (or a separate `User`) entity has a role: `MEMBER` / `LIBRARIAN`:
   - [x] `Role` enum (`MEMBER`/`LIBRARIAN`) added to `Member`, mapped via `@Enumerated(EnumType.STRING)`
   - [x] `Member` needs an actual login identifier to be authenticatable against — `firstName`/`lastName` can collide and aren't meant for login; add a unique field (`email` or `username`) plus a `password` field
-- [ ] Passwords hashed with BCrypt:
-  - [ ] `BCryptPasswordEncoder` bean in `SecurityConfig`
-  - [ ] Hash the password in `MemberService.createMember` before persisting — never store it plain
+- [x] Passwords hashed with BCrypt:
+  - [x] `PasswordEncoder` bean in `SecurityConfig` (declare and inject as the `PasswordEncoder` interface, backed by `BCryptPasswordEncoder` — keeps the algorithm swappable without touching every consumer)
+  - [x] Hash passwords everywhere a `Member`'s password is set (create, update, patch) before persisting — never store it plain
   - [x] Never expose `password` in `MemberResponse` (or any response DTO)
 - [ ] Custom `UserDetailsService`/`AuthenticationProvider` backed by `Member`, replacing the property-based test user so real login authenticates against the database:
   - [ ] `UserDetailsService` implementation that loads a `Member` by its login identifier via `MemberRepository`

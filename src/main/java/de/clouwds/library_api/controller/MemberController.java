@@ -3,6 +3,8 @@ package de.clouwds.library_api.controller;
 import de.clouwds.library_api.dto.MemberPatchRequest;
 import de.clouwds.library_api.dto.MemberRequest;
 import de.clouwds.library_api.dto.MemberResponse;
+import de.clouwds.library_api.dto.MemberUpdateRequest;
+import de.clouwds.library_api.dto.PasswordUpdateRequest;
 import de.clouwds.library_api.service.MemberService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -45,8 +47,14 @@ public class MemberController {
     }
 
     @PutMapping("/members/{id}")
-    public ResponseEntity<MemberResponse> updateMember(@Valid @RequestBody MemberRequest request, @PathVariable long id) {
+    public ResponseEntity<MemberResponse> updateMember(@Valid @RequestBody MemberUpdateRequest request, @PathVariable long id) {
         return ResponseEntity.ok(memberService.updateMember(request, id));
+    }
+
+    @PutMapping("/members/{id}/password")
+    public ResponseEntity<Void> updatePassword(@Valid @RequestBody PasswordUpdateRequest request, @PathVariable long id) {
+        memberService.updatePassword(id, request);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/members/{id}")

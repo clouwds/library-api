@@ -26,7 +26,7 @@ public class Member {
     private String email;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, length = 60)
     private String password;
 
     @NotNull

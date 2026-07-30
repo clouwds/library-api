@@ -60,12 +60,12 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] `PasswordEncoder` bean in `SecurityConfig` (declare and inject as the `PasswordEncoder` interface, backed by `BCryptPasswordEncoder` — keeps the algorithm swappable without touching every consumer)
   - [x] Hash passwords everywhere a `Member`'s password is set (create, update, patch) before persisting — never store it plain
   - [x] Never expose `password` in `MemberResponse` (or any response DTO)
-- [ ] Custom `UserDetailsService`/`AuthenticationProvider` backed by `Member`, replacing the property-based test user so real login authenticates against the database:
-  - [ ] `UserDetailsService` implementation that loads a `Member` by its login identifier via `MemberRepository`
-  - [ ] Map `Member.role` to a Spring Security `GrantedAuthority` (`ROLE_MEMBER`/`ROLE_LIBRARIAN`)
-  - [ ] Wire it into `SecurityConfig` so the `AuthenticationManager` actually uses it
-  - [ ] Remove `spring.security.user.*` from `application.properties` once real login against the `Member` table works
-  - [ ] Verify: login with real `Member` credentials from the database succeeds; the old property-based test user credentials no longer work
+- [x] Custom `UserDetailsService`/`AuthenticationProvider` backed by `Member`, replacing the property-based test user so real login authenticates against the database:
+  - [x] `UserDetailsService` implementation that loads a `Member` by its login identifier via `MemberRepository`
+  - [x] Map `Member.role` to a Spring Security `GrantedAuthority` (`ROLE_MEMBER`/`ROLE_LIBRARIAN`)
+  - [x] Wire it into `SecurityConfig` so the `AuthenticationManager` actually uses it
+  - [x] Remove `spring.security.user.*` from `application.properties` once real login against the `Member` table works
+  - [x] Verify: login with real `Member` credentials from the database succeeds; the old property-based test user credentials no longer work
 - [ ] CSRF protection left enabled; demonstrate the token round-trip (e.g. a documented curl sequence or a test)
 - [ ] Method-level security: only `LIBRARIAN` can `DELETE /books/{id}`, only the owning `MEMBER` (or a `LIBRARIAN`) can see their own loans (depends on the DB-backed roles above actually being in effect)
 

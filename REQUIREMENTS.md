@@ -67,7 +67,7 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] Remove `spring.security.user.*` from `application.properties` once real login against the `Member` table works
   - [x] Verify: login with real `Member` credentials from the database succeeds; the old property-based test user credentials no longer work
 - [x] CSRF protection left enabled; demonstrate the token round-trip (e.g. a documented curl sequence or a test)
-- [ ] Method-level security: only `LIBRARIAN` can `DELETE /books/{id}`, only the owning `MEMBER` (or a `LIBRARIAN`) can see their own loans (depends on the DB-backed roles above actually being in effect)
+- [x] Method-level security: only `LIBRARIAN` can `DELETE /books/{id}`, only the owning `MEMBER` (or a `LIBRARIAN`) can see their own loans (depends on the DB-backed roles above actually being in effect)
 
 ## Phase 4 — Stateless JWT security
 

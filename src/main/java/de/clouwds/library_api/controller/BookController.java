@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -22,7 +23,7 @@ public class BookController {
 
     Logger logger = LoggerFactory.getLogger(BookController.class);
 
-    BookService bookService;
+    private final BookService bookService;
 
     public BookController(BookService bookService) {
         this.bookService = bookService;
@@ -53,6 +54,7 @@ public class BookController {
         return bookService.findBookById(id);
     }
 
+    @PreAuthorize("hasRole('LIBRARIAN')")
     @PostMapping("/books")
     public ResponseEntity<BookResponse> createBook(@Valid @RequestBody BookRequest request) {
         BookResponse book = bookService.createBook(request);
@@ -65,16 +67,19 @@ public class BookController {
         return ResponseEntity.created(location).body(book);
     }
 
+    @PreAuthorize("hasRole('LIBRARIAN')")
     @PutMapping("/books/{id}")
     public ResponseEntity<BookResponse> updateBook(@Valid @RequestBody BookRequest request, @PathVariable long id) {
         return ResponseEntity.ok(bookService.updateBook(request, id));
     }
 
+    @PreAuthorize("hasRole('LIBRARIAN')")
     @PatchMapping("/books/{id}")
     public ResponseEntity<BookResponse> patchBook(@Valid @RequestBody BookPatchRequest request, @PathVariable long id) {
         return ResponseEntity.ok(bookService.patchBook(request, id));
     }
 
+    @PreAuthorize("hasRole('LIBRARIAN')")
     @DeleteMapping("/books/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable long id) {
         bookService.deleteBook(id);

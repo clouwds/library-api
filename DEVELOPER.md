@@ -249,18 +249,12 @@ refresh, even restarting the Spring Boot app doesn't clear it, which made
 Basic Auth confusing to test against session-based auth specifically. Form
 login was more consistent with the "session-based" premise of this phase.
 
-Current state:
-- Form-based login/logout, session-based (`HttpSession`, Spring Security's
-  default session strategy — this is what "session-based" means for Phase
-  3, as opposed to the stateless JWT approach planned for Phase 4).
+Current state (Phase 3, session-based — superseded by Phase 4, below):
 - `GET /api/books/**`, `GET /api/authors/**`, `POST /api/members` are
   public; everything else requires authentication.
-- Authentication is currently a single **property-based test user**
-  (`spring.security.user.*` in `application.properties`) — not backed by
-  the `Member` table yet. Role-based authorization
-  (`MEMBER`/`LIBRARIAN`), password hashing, and ownership-based method
-  security (e.g. a member only managing their own loans) are still open
-  Phase 3 items; see `REQUIREMENTS.md`.
+- Authentication is backed by the `Member` table (`MemberDetailsService`),
+  with role-based (`MEMBER`/`LIBRARIAN`) and ownership-based method
+  security (`@PreAuthorize`) in place — see `REQUIREMENTS.md` Phase 3.
 
 `.logout(logout -> logout.invalidateHttpSession(true))` is written out
 explicitly even though `true` is already `LogoutConfigurer`'s default —
@@ -271,12 +265,41 @@ about deliberately writing the code (documenting the decision, and having
 the hook already in place for future customization), not about changing
 runtime behavior that already happens by default.
 
-CSRF is still enabled by default (its own dedicated round-trip demo is a
-separate, not-yet-done Phase 3 item) — worth knowing while testing: the
-CSRF token **rotates after a successful login**. A token fetched from
-`/login` before authenticating is no longer valid for a subsequent
-`/logout` call in the same session; a fresh one has to be re-fetched
-post-login.
+CSRF was enabled by default through the rest of Phase 3, with a dedicated
+round-trip test proving it (`CsrfRoundTripTest`) — worth knowing while
+reading that test: the CSRF token **rotates after a successful login**. A
+token fetched from `/login` before authenticating is no longer valid for
+a subsequent `/logout` call in the same session; a fresh one has to be
+re-fetched post-login. CSRF is disabled again in Phase 4 — see below for
+why that's correct rather than a regression.
+
+### Stateless JWT (Phase 4)
+
+`.formLogin(...)` was removed entirely rather than kept alongside JWT —
+the two don't meaningfully coexist under this config. Form login's whole
+point is establishing a session; `SessionCreationPolicy.STATELESS` (set
+once JWT was introduced) tells Spring Security never to create or rely on
+one. Keeping both configured together wouldn't be two features coexisting,
+it'd be one mechanism (form login) built entirely around a resource
+(`HttpSession`) that the other explicitly forbids using. JWT — via a
+custom `JwtFilter`, a `OncePerRequestFilter` registered before
+`UsernamePasswordAuthenticationFilter` — is now the only authentication
+path.
+
+Tokens are carried via the `Authorization: Bearer <token>` header, not an
+httpOnly cookie. Two reasons: it matches how this project is actually
+tested throughout (`curl`, Postman, `MockMvc` all set headers directly; a
+cookie would mean managing a `Set-Cookie` response and a cookie jar in
+every test tool instead), and it's what makes disabling CSRF
+(`http.csrf(AbstractHttpConfigurer::disable)`) correct rather than
+reckless — CSRF exploits rely on a browser *automatically* attaching a
+cookie to a forged cross-site request, and a header is only ever attached
+by client code that explicitly does so. The honest tradeoff being
+accepted: a header-based token is typically kept in browser memory or
+`localStorage` by a real frontend, both readable by injected JS (XSS) in
+a way an httpOnly cookie isn't. This project has no browser-based client
+consuming the API yet, so that exposure doesn't currently apply — but
+it's the real cost of this choice if one is added later.
 
 ## Testing
 

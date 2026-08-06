@@ -1,19 +1,16 @@
 package de.clouwds.library_api.service;
 
-import de.clouwds.library_api.dto.MemberPatchRequest;
-import de.clouwds.library_api.dto.MemberRequest;
-import de.clouwds.library_api.dto.MemberResponse;
-import de.clouwds.library_api.dto.MemberUpdateRequest;
-import de.clouwds.library_api.dto.PasswordUpdateRequest;
+import de.clouwds.library_api.dto.*;
 import de.clouwds.library_api.exception.ConflictException;
 import de.clouwds.library_api.exception.ResourceNotFoundException;
 import de.clouwds.library_api.model.Member;
 import de.clouwds.library_api.repository.MemberRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @Service
 public class MemberService {
@@ -37,6 +34,11 @@ public class MemberService {
 
     public MemberResponse findMemberById(long id) {
         Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
+        return toMemberResponse(member);
+    }
+
+    public MemberResponse findMemberByEmail(String email) {
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
         return toMemberResponse(member);
     }
 

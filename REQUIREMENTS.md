@@ -71,11 +71,30 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
 
 ## Phase 4 — Stateless JWT security
 
-- [ ] `POST /auth/login` issuing a JWT access token (+ refresh token)
-- [ ] `SessionCreationPolicy.STATELESS`; custom JWT authentication filter
-- [ ] `POST /auth/refresh` to get a new access token
-- [ ] Decide and document token storage (Authorization header vs httpOnly cookie) and why
-- [ ] `POST /auth/logout` (token invalidation strategy — short expiry vs blacklist)
+- [x] Add a JWT library (e.g. `jjwt`) and a signing key/secret in `application.properties` (not committed in plaintext for a real project, but fine to note the tradeoff here)
+- [x] `POST /auth/login` issuing a JWT access token:
+  - [x] Accepts email/password, authenticates via the existing `AuthenticationProvider`/`AuthenticationManager` (reuse it — don't re-implement credential checking)
+  - [x] On success, issue a signed access token with claims: subject (member id or email), role, issued-at, short expiry (e.g. 15 min)
+  - [x] Response body returns token and token type (e.g. {"accessToken": "...", "tokenType": "..."})
+  - [x] Verify: `POST /auth/login` with valid `Member` credentials returns an access token; wrong credentials return `401`
+- [x] `SessionCreationPolicy.STATELESS`; custom JWT authentication filter:
+  - [x] `.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))` in `SecurityConfig`
+  - [x] Decide: does JWT auth replace the Phase 3 session/form-login setup entirely, or coexist with it? Document the choice
+  - [x] A custom `OncePerRequestFilter` (e.g. `JwtAuthenticationFilter`) that reads the `Authorization: Bearer <token>` header, validates signature + expiry, and builds an `Authentication` (reusing `MemberPrincipal` or similar) placed into `SecurityContextHolder`
+  - [x] Register the filter in the chain before `UsernamePasswordAuthenticationFilter`
+  - [x] Verify: existing `@PreAuthorize` checks (owning-member-or-librarian, `hasRole('LIBRARIAN')`) still work unchanged against JWT-derived authentication — they shouldn't need to know or care where the `Authentication` came from
+- [x] Decide and document token storage (`Authorization` header vs httpOnly cookie) and why — weigh XSS exposure (header/localStorage on a real frontend) against reintroducing CSRF concerns (cookie)
+- [ ] `POST /auth/refresh` to get a new access token, plus issuing the refresh token itself at login:
+  - [ ] Issue a separate, longer-lived refresh token at login (either a JWT with its own expiry, or an opaque token persisted server-side — decide and note why)
+  - [ ] Accepts the refresh token, validates it (signature/expiry, plus a lookup against the persisted store if using opaque tokens)
+  - [ ] Issues a new access token
+  - [ ] Decide: does the refresh token rotate (single-use, reissued each time — more secure) or stay valid until its own expiry (simpler)? Document the choice
+  - [ ] Verify: `POST /auth/login` returns both tokens; an expired or tampered refresh token sent to `/auth/refresh` is rejected; a valid one returns a fresh access token
+- [ ] `POST /auth/logout` (token invalidation strategy — short expiry vs blacklist):
+  - [ ] Since JWTs are stateless, logout can't truly invalidate an already-issued, still-valid token unless you track revocation somewhere
+  - [ ] Decide between: (a) rely on short access-token expiry and simply stop honoring the refresh token (no extra state), or (b) maintain a revocation list (DB/Redis) of revoked token IDs (`jti` claim) checked per request (adds back some state, but is the realistic production approach)
+  - [ ] Document why you picked one over the other for this project
+  - [ ] Verify: after logout, the old access token (if using approach b) or the refresh token (approach a) can no longer be used
 
 ## Phase 5 — Cross-cutting concerns
 

@@ -2,12 +2,18 @@ package de.clouwds.library_api.service;
 
 import de.clouwds.library_api.model.Member;
 import de.clouwds.library_api.model.MemberPrincipal;
+import de.clouwds.library_api.model.Role;
 import de.clouwds.library_api.repository.MemberRepository;
 import org.jspecify.annotations.NonNull;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.List;
 
 @Service
 public class MemberDetailsService implements UserDetailsService {
@@ -21,7 +27,7 @@ public class MemberDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Could not find user with email " + email));
-        return new MemberPrincipal(member);
+        return new MemberPrincipal(member.getId(), member.getEmail(), member.getPassword(), buildAuthoritiesFromRole(member.getRole()));
 
         /*
 
@@ -40,6 +46,11 @@ public class MemberDetailsService implements UserDetailsService {
 
         return userBuilder.build();
         */
+    }
+
+    public List<GrantedAuthority> buildAuthoritiesFromRole(Role role) {
+        String roleString = "ROLE_" + role.name();
+        return List.of(new SimpleGrantedAuthority(roleString));
     }
 
 }

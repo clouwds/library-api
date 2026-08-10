@@ -97,11 +97,11 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] `POST /auth/refresh`: look up the incoming token by its hash, reject if not found/expired/already consumed, otherwise rotate (invalidate the old row, persist a new one) and issue a fresh access token
     - [x] Verify: `POST /auth/login` returns both tokens; a valid refresh token returns a fresh access token *and* a new refresh token; the just-used (now-rotated) refresh token is rejected on a second attempt; an expired or tampered refresh token is rejected
     - [x] Note as a known simplification, not something to build now: expired/consumed `RefreshToken` rows accumulate indefinitely — a real deployment would need periodic cleanup, out of scope for this project
-- [ ] `POST /auth/logout` (token invalidation strategy — short expiry vs blacklist):
-  - [ ] Since JWTs are stateless, logout can't truly invalidate an already-issued, still-valid token unless you track revocation somewhere
-  - [ ] Decide between: (a) rely on short access-token expiry and simply stop honoring the refresh token (no extra state), or (b) maintain a revocation list (DB/Redis) of revoked token IDs (`jti` claim) checked per request (adds back some state, but is the realistic production approach)
-  - [ ] Document why you picked one over the other for this project
-  - [ ] Verify: after logout, the old access token (if using approach b) or the refresh token (approach a) can no longer be used
+- [x] `POST /auth/logout` (token invalidation strategy — short expiry vs blacklist):
+  - [x] Since JWTs are stateless, logout can't truly invalidate an already-issued, still-valid token unless you track revocation somewhere
+  - [x] Decide between: (a) rely on short access-token expiry and simply stop honoring the refresh token (no extra state), or (b) maintain a revocation list (DB/Redis) of revoked token IDs (`jti` claim) checked per request (adds back some state, but is the realistic production approach) — **decided: (a)** (see `DEVELOPER.md` — not a high-stakes application, so the cost of a per-request revocation-list lookup isn't justified by the benefit of killing an access token slightly earlier than its own 15-minute expiry)
+  - [x] Document why you picked one over the other for this project
+  - [x] Verify: after logout, the old access token (if using approach b) or the refresh token (approach a) can no longer be used — confirmed live: `204` on logout, access token still returns `200` on a protected endpoint (expected under option a), `/auth/refresh` with the logged-out token returns `401`. Logout itself is idempotent (repeating it with the same token also returns `204`, not `401`) — it only asserts the token is unusable, not that it was still fresh; a nonexistent token still correctly returns `401`
 
 ## Phase 5 — Cross-cutting concerns
 

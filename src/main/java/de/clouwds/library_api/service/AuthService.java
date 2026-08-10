@@ -50,6 +50,11 @@ public class AuthService {
         return buildTokenResponse(principal, newToken);
     }
 
+    public void logout(String refreshTokenString) {
+        RefreshToken token = refreshTokenService.findByToken(refreshTokenString);
+        refreshTokenService.markUsed(token);
+    }
+
     private MemberPrincipal getAuthenticatedPrincipal(String email, String password) {
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(email, password);
         Authentication auth = authenticationManager.authenticate(token);

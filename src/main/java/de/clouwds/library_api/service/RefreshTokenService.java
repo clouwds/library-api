@@ -34,9 +34,13 @@ public class RefreshTokenService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes);
     }
 
-    public RefreshToken validateToken(String refreshTokenString) {
+    public RefreshToken findByToken(String refreshTokenString) {
         String hashedToken = hashToken(refreshTokenString);
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hashedToken).orElseThrow(() -> new InvalidTokenException("Invalid refresh token."));
+        return refreshTokenRepository.findByTokenHash(hashedToken).orElseThrow(() -> new InvalidTokenException("Invalid refresh token."));
+    }
+
+    public RefreshToken validateToken(String refreshTokenString) {
+        RefreshToken refreshToken = findByToken(refreshTokenString);
         if (refreshToken.isUsed()) {
             throw new TokenAlreadyUsedException("Token has already been used.");
         }

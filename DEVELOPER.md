@@ -343,6 +343,21 @@ trading a real fix for a security cost, just declining a fake one. Cleanup
 of old rows stays the same known, deferred simplification noted in
 `REQUIREMENTS.md` regardless of which approach was picked here.
 
+**`POST /auth/logout` only revokes the refresh token — it does not kill the
+current access token early.** It reuses the exact mechanism rotation
+already provides: the presented refresh token is validated and marked
+`used`, the same as a normal refresh, just without issuing a replacement.
+The consequence is a deliberate one: an access token that's already been
+issued keeps working for whatever remains of its 15-minute lifespan after
+logout, since nothing about it changes. Actually invalidating it early
+would mean a `jti`-based revocation list checked on every request (option
+b in `REQUIREMENTS.md`) — real infrastructure, and a per-request lookup
+that undoes the reason access tokens are stateless JWTs in the first
+place. That cost isn't justified here: this is a library catalog/loan
+system, not a banking or otherwise high-stakes application, so a short,
+bounded window where a just-logged-out access token remains technically
+valid is an acceptable tradeoff against not adding that infrastructure.
+
 ## Testing
 
 No automated test suite yet (`MockMvc`/`WebTestClient`/Testcontainers are

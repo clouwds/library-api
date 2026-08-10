@@ -10,22 +10,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
-
 @Service
 public class MemberService {
 
-    MemberRepository memberRepository;
+    private final MemberRepository memberRepository;
 
-    PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     public MemberService(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
-    }
-
-    private MemberResponse toMemberResponse(Member member) {
-        return new MemberResponse(member.getId(), member.getFirstName(), member.getLastName(), member.getEmail(), member.getRole());
     }
 
     public List<MemberResponse> getAllMembers() {
@@ -33,12 +27,15 @@ public class MemberService {
     }
 
     public MemberResponse findMemberById(long id) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
-        return toMemberResponse(member);
+        return toMemberResponse(getMemberOrThrow(id));
+    }
+
+    public Member getMemberById(long id) {
+        return getMemberOrThrow(id);
     }
 
     public MemberResponse findMemberByEmail(String email) {
-        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("Member not found - Email: " + email));
         return toMemberResponse(member);
     }
 
@@ -57,7 +54,7 @@ public class MemberService {
     }
 
     public MemberResponse updateMember(MemberUpdateRequest request, long id) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
+        Member member = getMemberOrThrow(id);
         member.setFirstName(request.firstName());
         member.setLastName(request.lastName());
         member.setEmail(request.email());
@@ -66,13 +63,13 @@ public class MemberService {
     }
 
     public void updatePassword(long id, PasswordUpdateRequest request) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
+        Member member = getMemberOrThrow(id);
         member.setPassword(passwordEncoder.encode(request.password()));
         memberRepository.save(member);
     }
 
     public MemberResponse patchMember(MemberPatchRequest request, long id) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
+        Member member = getMemberOrThrow(id);
 
         if (request.firstName() != null) {
             member.setFirstName(request.firstName());
@@ -98,5 +95,13 @@ public class MemberService {
             throw new ResourceNotFoundException("Member not found - Id: " + id);
         }
         memberRepository.deleteById(id);
+    }
+
+    private Member getMemberOrThrow(long id) {
+        return memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found - Id: " + id));
+    }
+
+    private MemberResponse toMemberResponse(Member member) {
+        return new MemberResponse(member.getId(), member.getFirstName(), member.getLastName(), member.getEmail(), member.getRole());
     }
 }

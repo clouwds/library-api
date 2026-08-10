@@ -9,15 +9,18 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class JwtService {
@@ -25,11 +28,9 @@ public class JwtService {
     private static final String TOKEN_VALIDATION_ERROR = "Token validation error {}";
     private static final Logger log = LoggerFactory.getLogger(JwtService.class);
 
-    private final AuthenticationManager authenticationManager;
     private final String secretBase64;
 
-    public JwtService(AuthenticationManager authenticationManager, @Value("${jwt.secret}") String secretBase64) {
-        this.authenticationManager = authenticationManager;
+    public JwtService(@Value("${jwt.secret}") String secretBase64) {
         this.secretBase64 = secretBase64;
     }
 
@@ -51,26 +52,34 @@ public class JwtService {
         return jwtBuilder.compact();
     }
 
-    private @NonNull SecretKey decodeSecretKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretBase64));
-    }
-
-    public MemberPrincipal authenticate(String email, String password) {
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(email, password);
-        Authentication auth = authenticationManager.authenticate(token);
-        return  (MemberPrincipal) auth.getPrincipal();
-    }
-
-    public Jws<Claims> validateToken(String token) {
+    public Optional<Jws<Claims>> validateToken(String token) {
         try {
-            return Jwts.parser()
+            return Optional.of(Jwts.parser()
                     .verifyWith(decodeSecretKey())
                     .build()
-                    .parseSignedClaims(token);
-        } catch (ExpiredJwtException | UnsupportedJwtException | SignatureException | MalformedJwtException | IllegalArgumentException e) {
+                    .parseSignedClaims(token));
+        } catch (ExpiredJwtException | UnsupportedJwtException | SignatureException | MalformedJwtException |
+                 IllegalArgumentException e) {
             log.warn(TOKEN_VALIDATION_ERROR, e.getMessage());
         }
-        return null;
+        return Optional.empty();
+    }
+
+    @NonNull
+    public UsernamePasswordAuthenticationToken buildAuthentication(Jws<Claims> claims) {
+        Long id = claims.getPayload().get("id", Long.class);
+        String username = claims.getPayload().getSubject();
+        String roleString = claims.getPayload().get("roleString", String.class);
+
+        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(roleString));
+        UserDetails memberPrincipal = new MemberPrincipal(id, username, null, authorities);
+
+        //principal (UserDetails), credentials, authorities
+        return new UsernamePasswordAuthenticationToken(memberPrincipal, null, authorities);
+    }
+
+    private @NonNull SecretKey decodeSecretKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretBase64));
     }
 
 }

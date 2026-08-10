@@ -84,12 +84,19 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] Register the filter in the chain before `UsernamePasswordAuthenticationFilter`
   - [x] Verify: existing `@PreAuthorize` checks (owning-member-or-librarian, `hasRole('LIBRARIAN')`) still work unchanged against JWT-derived authentication — they shouldn't need to know or care where the `Authentication` came from
 - [x] Decide and document token storage (`Authorization` header vs httpOnly cookie) and why — weigh XSS exposure (header/localStorage on a real frontend) against reintroducing CSRF concerns (cookie)
-- [ ] `POST /auth/refresh` to get a new access token, plus issuing the refresh token itself at login:
-  - [ ] Issue a separate, longer-lived refresh token at login (either a JWT with its own expiry, or an opaque token persisted server-side — decide and note why)
-  - [ ] Accepts the refresh token, validates it (signature/expiry, plus a lookup against the persisted store if using opaque tokens)
-  - [ ] Issues a new access token
-  - [ ] Decide: does the refresh token rotate (single-use, reissued each time — more secure) or stay valid until its own expiry (simpler)? Document the choice
-  - [ ] Verify: `POST /auth/login` returns both tokens; an expired or tampered refresh token sent to `/auth/refresh` is rejected; a valid one returns a fresh access token
+- [x] `POST /auth/refresh` to get a new access token, plus issuing the refresh token itself at login:
+  - [x] Decide: JWT with its own expiry, or an opaque token persisted server-side? Document the choice — **decided: opaque, persisted** (see `DEVELOPER.md` — revocability, since a signed JWT refresh token can't be invalidated before its own expiry)
+  - [x] Decide: does the refresh token rotate (single-use, reissued each time) or stay valid until its own expiry? Document the choice — **decided: rotates** (see `DEVELOPER.md` — reuse of an already-consumed token is a detectable signal, and it sets up `POST /auth/logout` for free)
+  - [x] Persistence for the opaque token:
+    - [x] Decide: mark a consumed token with a `revoked`/`used` boolean, or delete the row outright on rotation? Document the choice — **decided: `used` flag** (see `DEVELOPER.md` — deleting collapses "never existed" and "already used once" into the same not-found result, throwing away rotation's actual reuse-detection signal)
+    - [x] `RefreshToken` entity — a hash of the token value (never the raw value — same reasoning as never storing a plain password), a `Member` reference, `issuedAt`, `expiresAt`, `used`
+    - [x] `RefreshTokenRepository` — at minimum a lookup by the token hash
+    - [x] Flyway migration for the new table, consistent with how every other table is managed (no `ddl-auto`)
+    - [x] Decide how the raw opaque value itself is generated — needs to be an unguessable secret (e.g. `SecureRandom` bytes, base64-encoded), not something like a plain `UUID.randomUUID()` chosen only for uniqueness rather than unpredictability
+  - [x] `POST /auth/login`: persist a new `RefreshToken` row and return the raw value to the client (only the raw value is ever transmitted; only the hash is stored)
+  - [x] `POST /auth/refresh`: look up the incoming token by its hash, reject if not found/expired/already consumed, otherwise rotate (invalidate the old row, persist a new one) and issue a fresh access token
+    - [x] Verify: `POST /auth/login` returns both tokens; a valid refresh token returns a fresh access token *and* a new refresh token; the just-used (now-rotated) refresh token is rejected on a second attempt; an expired or tampered refresh token is rejected
+    - [x] Note as a known simplification, not something to build now: expired/consumed `RefreshToken` rows accumulate indefinitely — a real deployment would need periodic cleanup, out of scope for this project
 - [ ] `POST /auth/logout` (token invalidation strategy — short expiry vs blacklist):
   - [ ] Since JWTs are stateless, logout can't truly invalidate an already-issued, still-valid token unless you track revocation somewhere
   - [ ] Decide between: (a) rely on short access-token expiry and simply stop honoring the refresh token (no extra state), or (b) maintain a revocation list (DB/Redis) of revoked token IDs (`jti` claim) checked per request (adds back some state, but is the realistic production approach)

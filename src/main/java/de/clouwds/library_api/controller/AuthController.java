@@ -1,12 +1,7 @@
 package de.clouwds.library_api.controller;
 
-import de.clouwds.library_api.dto.LoginRequest;
-import de.clouwds.library_api.dto.LoginResponse;
-import de.clouwds.library_api.dto.MemberRequest;
-import de.clouwds.library_api.dto.MemberResponse;
-import de.clouwds.library_api.model.MemberPrincipal;
-import de.clouwds.library_api.service.JwtService;
-import de.clouwds.library_api.service.MemberDetailsService;
+import de.clouwds.library_api.dto.*;
+import de.clouwds.library_api.service.AuthService;
 import de.clouwds.library_api.service.MemberService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,14 +17,12 @@ import java.net.URI;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final JwtService jwtService;
+    private final AuthService authService;
     private final MemberService memberService;
-    private final MemberDetailsService memberDetailsService;
 
-    public AuthController(JwtService jwtService, MemberService memberService, MemberDetailsService memberDetailsService) {
-        this.jwtService = jwtService;
+    public AuthController(AuthService authService, MemberService memberService) {
+        this.authService = authService;
         this.memberService = memberService;
-        this.memberDetailsService = memberDetailsService;
     }
 
     @PostMapping("/register")
@@ -45,10 +38,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest loginRequest) {
-        MemberPrincipal memberPrincipal = jwtService.authenticate(loginRequest.email(), loginRequest.password());
-        String token = jwtService.generateToken(memberPrincipal);
-        return ResponseEntity.ok(new LoginResponse(token, "Bearer"));
+    public ResponseEntity<TokenResponse> login(@RequestBody @Valid LoginRequest request) {
+        TokenResponse tokenResponse = authService.login(request.email(), request.password());
+        return ResponseEntity.ok(tokenResponse);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponse> refresh(@RequestBody @Valid RefreshRequest request) {
+        TokenResponse tokenResponse = authService.refresh(request.refreshToken());
+        return ResponseEntity.ok(tokenResponse);
     }
 
     @PostMapping("/logout")

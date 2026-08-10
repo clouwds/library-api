@@ -301,6 +301,48 @@ a way an httpOnly cookie isn't. This project has no browser-based client
 consuming the API yet, so that exposure doesn't currently apply — but
 it's the real cost of this choice if one is added later.
 
+**Refresh tokens are opaque and persisted server-side, not a second JWT.**
+This looks like it fights the "stateless" premise above, and it does —
+deliberately. Access tokens stay pure stateless JWTs specifically because
+their short lifespan (15 min) makes that safe: a compromised one heals
+itself quickly no matter what anyone does. A refresh token doesn't have
+that luxury — it's long-lived and high-value, so the ability to kill one
+immediately (a stolen device, a user hitting logout) matters more than
+staying stateless. A signed JWT refresh token can't be revoked before its
+own expiry at all: the server has no record it exists, so there's nothing
+to invalidate. An opaque random string in a DB table, keyed to the
+`Member` with issued/expiry/revoked columns, can be deleted or flagged the
+moment it needs to stop working. This is also the industry-standard split
+(access tokens stateless, refresh tokens tracked), not a one-off choice
+for this project.
+
+**Refresh tokens rotate — single-use, reissued on every refresh, not valid
+until their own expiry.** Once a refresh token is opaque and persisted
+anyway, rotation is nearly free: reusing the same server-side record to
+mark a token "used" and swap in its replacement needs no new
+infrastructure. The security benefit is concrete: if a refresh token is
+ever stolen and used by an attacker, the legitimate client's *next*
+refresh attempt will fail (its token was already consumed), which is a
+detectable signal that something is wrong — a non-rotating token gives no
+such signal and just stays quietly valid for whoever holds it until it
+naturally expires. This also directly sets up the
+`POST /auth/logout` decision (see `REQUIREMENTS.md`): with rotation
+already tracking refresh tokens server-side, logout has real state to
+revoke rather than needing a separate mechanism bolted on afterward.
+
+A consumed `RefreshToken` row is marked with a `used`/`revoked` flag, not
+deleted. Deleting was the first instinct — it avoids the table filling up
+with spent rows — but it throws away exactly the thing rotation exists to
+provide: the difference between "this token never existed" and "this
+token existed and was already used once." That second case is the actual
+attack signal (a stolen token being replayed after the legitimate client
+already rotated it); collapsing both into "not found" erases it. Deleting
+also doesn't solve the growth problem it was chosen for — flagged rows and
+expired-but-unrotated rows both still accumulate either way, so this isn't
+trading a real fix for a security cost, just declining a fake one. Cleanup
+of old rows stays the same known, deferred simplification noted in
+`REQUIREMENTS.md` regardless of which approach was picked here.
+
 ## Testing
 
 No automated test suite yet (`MockMvc`/`WebTestClient`/Testcontainers are

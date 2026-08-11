@@ -46,4 +46,9 @@ public class HttpExceptionHandler {
                 e.getMessage()
         );
     }
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleException(Exception e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong!");
+    }
 }

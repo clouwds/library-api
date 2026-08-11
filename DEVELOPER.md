@@ -160,6 +160,33 @@ Spring Data's `EmptyResultDataAccessException`, which isn't mapped by
 `HttpExceptionHandler` — left unchecked, deleting something that's already
 gone would surface as an unhandled `500` instead of a clean `404`.
 
+**Unmapped routes (a genuine 404) are static HTML/JSON, not a custom
+`ErrorController`.** `src/main/resources/static/error/4xx.html` and
+`5xx.html` are enough on their own — Spring Boot's auto-configured
+`BasicErrorController` already resolves `error/<status>`/`error/<4xx|5xx>`
+by convention and already content-negotiates correctly (`Accept: text/html`
+gets the static page, `Accept: application/json` gets a structured JSON
+body), with zero Java code. A custom `ErrorController` would only earn its
+keep for genuinely dynamic error content, which this project doesn't need
+— this is an API-first backend where a browser hitting an unmapped route
+is an edge case, not the primary flow.
+
+That static-page approach needed one non-obvious fix to actually work:
+Spring Security secures the *internal forward* to `/error` too, not just
+the original request. Without `.requestMatchers("/error").permitAll()` in
+`SecurityConfig`, an unmapped route would get forwarded to `/error`
+internally, that forwarded request would fail `.anyRequest().authenticated()`
+same as any other unlisted path, and — since there's no
+`AuthenticationEntryPoint` configured anymore (no `formLogin`, pure
+stateless JWT) — Spring Security's default `Http403ForbiddenEntryPoint`
+would reject it with a bare `403` before `BasicErrorController` ever ran.
+Confirmed via `logging.level.org.springframework.security=DEBUG`: the log
+showed `Securing GET /error` immediately followed by the entry point
+rejecting it. Adding `/error` to the permitted paths doesn't weaken
+anything else — every other route's rule is unchanged, and an anonymous
+request to a route that's genuinely protected (not just unmapped) still
+correctly returns `403` rather than leaking whether it exists.
+
 ## Concurrency: the borrow operation
 
 `LoanService.borrowBookOptimistic` is the one wired to `POST /loans`. It's

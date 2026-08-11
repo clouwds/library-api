@@ -112,7 +112,11 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] Verify both paths: `GET` an unmapped route in a browser → custom page, not Whitelabel; same request via curl/Postman with `Accept: application/json` → clean JSON, not HTML — confirmed live: `404` + custom page for HTML, `404` + structured JSON for `Accept: application/json`, on a genuinely unmapped route
 - [x] `@Aspect` that logs execution time of service-layer methods
 - [x] Spring Boot Actuator enabled (`health`, `info`, `metrics`); non-trivial endpoints secured/restricted to `LIBRARIAN`
-- [ ] CORS configured for a specific allowed origin (simulate a frontend)
+- [x] CORS configured for a specific allowed origin (simulate a frontend):
+  - [x] Pick a concrete origin to simulate a frontend (e.g. `http://localhost:5173`) — document the choice
+  - [x] Define a `CorsConfigurationSource` bean: allowed origin(s), methods, headers, and whether credentials (the `Authorization` header) are allowed
+  - [x] Wire it into `HttpSecurity` via `.cors(...)` in `SecurityConfig` — not a `WebMvcConfigurer`/`@CrossOrigin` (see `DEVELOPER.md` for why)
+  - [x] Verify: a preflight `OPTIONS` request from the allowed origin gets back the correct `Access-Control-Allow-*` headers; a request from a different, non-allowed origin is rejected — confirmed live: `200` + `Access-Control-Allow-Origin: http://localhost:5173` for the allowed origin, `403 Invalid CORS request` with no `Access-Control-Allow-*` headers for a disallowed origin
 - [ ] Security response headers configured explicitly: CSP, `X-Frame-Options`, HSTS, etc. via Spring Security's headers DSL
 - [ ] OpenAPI/Swagger UI wired up (springdoc-openapi) documenting all endpoints
 

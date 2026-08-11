@@ -385,6 +385,20 @@ system, not a banking or otherwise high-stakes application, so a short,
 bounded window where a just-logged-out access token remains technically
 valid is an acceptable tradeoff against not adding that infrastructure.
 
+### CORS
+
+CORS config belongs in `SecurityConfig`, wired into `HttpSecurity` via
+`.cors(...)` and a `CorsConfigurationSource` bean — not a `WebMvcConfigurer`
+`addCorsMappings()` override, and not `@CrossOrigin` on controllers.
+Spring Security's filter chain runs before a request ever reaches
+DispatcherServlet/MVC, and a CORS preflight (`OPTIONS`) request is
+unauthenticated by nature — `WebMvcConfigurer`-level CORS handling only
+applies once a request reaches a mapped handler, so Security's
+`anyRequest().authenticated()` would reject the preflight first and the
+browser would never see the `Access-Control-Allow-*` headers. Configuring
+CORS on `HttpSecurity` instead makes Security itself aware of and permit
+the preflight before its auth rules apply.
+
 ## Testing
 
 No automated test suite yet (`MockMvc`/`WebTestClient`/Testcontainers are

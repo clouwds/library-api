@@ -35,6 +35,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/authors/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                 .requestMatchers("/error").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/actuator/**").hasRole("LIBRARIAN")
                 .anyRequest().authenticated());
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

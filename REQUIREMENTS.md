@@ -110,7 +110,7 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] Confirm API clients (`Accept: application/json`) still get a structured JSON error body for the same unmapped-route/error cases, not HTML — verify Spring Boot's content-negotiation-aware default `/error` behavior, extending `HttpExceptionHandler` only if it doesn't already do this — confirmed already correct out of the box, `HttpExceptionHandler` didn't need extending for this
   - [x] A catch-all `@ExceptionHandler(Exception.class)` in `HttpExceptionHandler` for genuinely unexpected/unhandled exceptions, returning a generic `500` `ProblemDetail` instead of leaking a stack trace or falling through to the Whitelabel page — verified live against `/api/books/not-a-number`: `500` `ProblemDetail`, no invocation failure
   - [x] Verify both paths: `GET` an unmapped route in a browser → custom page, not Whitelabel; same request via curl/Postman with `Accept: application/json` → clean JSON, not HTML — confirmed live: `404` + custom page for HTML, `404` + structured JSON for `Accept: application/json`, on a genuinely unmapped route
-- [ ] `@Aspect` that logs execution time of service-layer methods
+- [x] `@Aspect` that logs execution time of service-layer methods
 - [ ] Spring Boot Actuator enabled (`health`, `info`, `metrics`); non-trivial endpoints secured/restricted to `LIBRARIAN`
 - [ ] CORS configured for a specific allowed origin (simulate a frontend)
 - [ ] Security response headers configured explicitly: CSP, `X-Frame-Options`, HSTS, etc. via Spring Security's headers DSL

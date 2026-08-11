@@ -117,7 +117,11 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] Define a `CorsConfigurationSource` bean: allowed origin(s), methods, headers, and whether credentials (the `Authorization` header) are allowed
   - [x] Wire it into `HttpSecurity` via `.cors(...)` in `SecurityConfig` — not a `WebMvcConfigurer`/`@CrossOrigin` (see `DEVELOPER.md` for why)
   - [x] Verify: a preflight `OPTIONS` request from the allowed origin gets back the correct `Access-Control-Allow-*` headers; a request from a different, non-allowed origin is rejected — confirmed live: `200` + `Access-Control-Allow-Origin: http://localhost:5173` for the allowed origin, `403 Invalid CORS request` with no `Access-Control-Allow-*` headers for a disallowed origin
-- [ ] Security response headers configured explicitly: CSP, `X-Frame-Options`, HSTS, etc. via Spring Security's headers DSL
+- [x] Security response headers configured explicitly: CSP, `X-Frame-Options`, HSTS, etc. via Spring Security's headers DSL:
+  - [x] Check which of these Spring Security already sets by default (e.g. `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`) vs. which need explicit opt-in (CSP, HSTS aren't on by default) — don't assume every header in this requirement needs new code
+  - [x] Decide a concrete CSP policy appropriate for this project (a JSON API plus two static error pages, not a full server-rendered app — e.g. a restrictive `default-src 'self'`), and configure it via `.headers(headers -> headers.contentSecurityPolicy(...))` in `SecurityConfig` — **decided: `default-src 'self'`**
+  - [x] Configure HSTS via `.headers(headers -> headers.httpStrictTransportSecurity(...))` — note it only has any effect over an actual HTTPS connection, so decide how (or whether) to verify it without TLS in local dev — configured (`maxAgeInSeconds(31536000)`, `includeSubDomains(true)`); can't be verified live without TLS in local dev, so this one is confirmed by config/code review rather than a live header check
+  - [x] Verify: `curl -i` against both a JSON endpoint and the static error page, confirming the configured CSP/HSTS/`X-Frame-Options` values are present in the raw response headers — confirmed live: both responses include `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Content-Security-Policy: default-src 'self'`
 - [ ] OpenAPI/Swagger UI wired up (springdoc-openapi) documenting all endpoints
 
 ## Phase 6 — Stretch (optional)

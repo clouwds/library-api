@@ -385,6 +385,48 @@ system, not a banking or otherwise high-stakes application, so a short,
 bounded window where a just-logged-out access token remains technically
 valid is an acceptable tradeoff against not adding that infrastructure.
 
+### Security response headers
+
+These headers are defense-in-depth: even if the app logic and other
+security controls are correct, they instruct the *browser* to restrict
+what it does with the response, closing off classes of attack that live
+entirely on the client side.
+
+- **CSP (Content-Security-Policy)** restricts which sources scripts,
+  styles, images, etc. can be loaded from. It doesn't stop XSS from being
+  injected, but it limits what an injected script can actually do (e.g. it
+  can't load or execute from an attacker's domain if the policy doesn't
+  allow it).
+- **X-Frame-Options** stops the page being loaded inside an `<iframe>` on
+  another site — prevents clickjacking, where an attacker overlays your
+  page invisibly and tricks a user into clicking something they didn't
+  mean to.
+- **HSTS (Strict-Transport-Security)** tells the browser "always use HTTPS
+  for this domain, for the next `max-age` seconds — never fall back to
+  plain HTTP, even if the user types `http://` or clicks an `http://`
+  link." Without it, the *first* request to a domain can go out over plain
+  HTTP before any redirect to HTTPS happens, and that one request is
+  interceptable/rewritable by a man-in-the-middle (SSL-stripping). HSTS
+  closes that gap by making the browser upgrade to HTTPS itself, before
+  any request is sent — but only after it's seen the header once over an
+  already-HTTPS connection, which is why it's meaningless over plain HTTP
+  in local dev.
+
+Confirmed via `curl -i` against a running instance (no header config
+written yet) which of these Spring Security already sets by default:
+`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+`X-XSS-Protection: 0`, and `Cache-Control`/`Pragma`/`Expires`
+(no-cache). Two are different:
+- **HSTS** is technically also on by default (`HstsHeaderWriter`), but it
+  only writes the header when the request is already over HTTPS
+  (`request.isSecure()`) — on plain HTTP in local dev it never appears,
+  not because it's disabled but because the condition for it isn't met.
+  No new code is needed for the header to exist; code is only needed to
+  customize its values (`max-age`, `includeSubDomains`, `preload`).
+- **CSP** is genuinely absent by default — no `Content-Security-Policy`
+  header shows up at all without explicit
+  `.headers(headers -> headers.contentSecurityPolicy(...))` config.
+
 ### CORS
 
 CORS config belongs in `SecurityConfig`, wired into `HttpSecurity` via

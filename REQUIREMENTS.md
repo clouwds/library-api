@@ -122,7 +122,7 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
   - [x] Decide a concrete CSP policy appropriate for this project (a JSON API plus two static error pages, not a full server-rendered app — e.g. a restrictive `default-src 'self'`), and configure it via `.headers(headers -> headers.contentSecurityPolicy(...))` in `SecurityConfig` — **decided: `default-src 'self'`**
   - [x] Configure HSTS via `.headers(headers -> headers.httpStrictTransportSecurity(...))` — note it only has any effect over an actual HTTPS connection, so decide how (or whether) to verify it without TLS in local dev — configured (`maxAgeInSeconds(31536000)`, `includeSubDomains(true)`); can't be verified live without TLS in local dev, so this one is confirmed by config/code review rather than a live header check
   - [x] Verify: `curl -i` against both a JSON endpoint and the static error page, confirming the configured CSP/HSTS/`X-Frame-Options` values are present in the raw response headers — confirmed live: both responses include `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Content-Security-Policy: default-src 'self'`
-- [ ] OpenAPI/Swagger UI wired up (springdoc-openapi) documenting all endpoints
+- [x] OpenAPI/Swagger UI wired up (springdoc-openapi) documenting all endpoints — confirmed live: `/v3/api-docs` lists all 15 endpoints across every controller with no per-endpoint annotations needed, `/swagger-ui.html` resolves, `bearerAuth` JWT scheme registered for testing protected endpoints from the UI; disabled in the `prod` profile (`application-prod.properties`) since publicly exposing the full endpoint map is unnecessary attack-surface disclosure
 
 ## Phase 6 — Stretch (optional)
 

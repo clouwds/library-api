@@ -2,6 +2,7 @@ package de.clouwds.library_api.config;
 
 import de.clouwds.library_api.repository.MemberRepository;
 import de.clouwds.library_api.security.JwtFilter;
+import de.clouwds.library_api.security.RateLimitFilter;
 import de.clouwds.library_api.service.MemberDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +33,7 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter, RateLimitFilter rateLimitFilter) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
         //Todo: maybe custom success Handler (SavedRequestAwareAuthenticationSuccessHandler)
@@ -52,6 +53,7 @@ public class SecurityConfig {
                         .maxAgeInSeconds(31536000)));
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(rateLimitFilter, JwtFilter.class);
         return http.build();
     }
 

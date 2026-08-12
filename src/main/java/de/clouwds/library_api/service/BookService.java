@@ -11,6 +11,8 @@ import de.clouwds.library_api.model.Book;
 import de.clouwds.library_api.repository.AuthorRepository;
 import de.clouwds.library_api.repository.BookRepository;
 import de.clouwds.library_api.specification.BookSpecifications;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,8 @@ import java.util.Map;
 
 @Service
 public class BookService {
+
+    private static final String CACHE_CONDITIONS = "#authorId == null && #genre == null && #publicationFrom == null && #publicationTo == null && #sortParams == null && #page == 0 && #size == 10";
 
     private static final Map<String, String> SORTABLE_FIELDS = Map.of(
             "title", "title",
@@ -38,6 +42,7 @@ public class BookService {
         this.authorRepository = authorRepository;
     }
 
+    @Cacheable(value = "books", condition = CACHE_CONDITIONS)
     public Page<BookResponse> getAllBooks(Long authorId, String genre, Integer publicationFrom, Integer publicationTo, String sortParams, int page, int size) {
         Specification<Book> specification = Specification.unrestricted();
 
@@ -100,6 +105,7 @@ public class BookService {
         return bookRepository.findByIsbn(isbn) != null;
     }
 
+    @CacheEvict(value = "books",  allEntries = true)
     public BookResponse createBook(BookRequest request) {
         if(existsByIsbn(request.isbn())) {
             throw new ConflictException("Book with ISBN " + request.isbn() + " already exists");
@@ -114,6 +120,7 @@ public class BookService {
         return toBookResponse(bookRepository.save(book));
     }
 
+    @CacheEvict(value = "books",  allEntries = true)
     public BookResponse updateBook(BookRequest request, long id) {
         Book book = bookRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Book not found - Id: " + id));
 
@@ -127,6 +134,7 @@ public class BookService {
         return toBookResponse(bookRepository.save(book));
     }
 
+    @CacheEvict(value = "books",  allEntries = true)
     public BookResponse patchBook(BookPatchRequest request, long id) {
         Book book = bookRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Book not found - Id: " + id));
 
@@ -152,6 +160,7 @@ public class BookService {
         return toBookResponse(bookRepository.save(book));
     }
 
+    @CacheEvict(value = "books",  allEntries = true)
     public void deleteBook(long id) {
         if (!bookRepository.existsById(id)) {
             throw new ResourceNotFoundException("Book not found - Id: " + id);

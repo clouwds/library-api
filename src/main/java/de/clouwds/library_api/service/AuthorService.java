@@ -6,6 +6,8 @@ import de.clouwds.library_api.dto.AuthorResponse;
 import de.clouwds.library_api.exception.ResourceNotFoundException;
 import de.clouwds.library_api.model.Author;
 import de.clouwds.library_api.repository.AuthorRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +25,7 @@ public class AuthorService {
         return new AuthorResponse(author.getId(), author.getName());
     }
 
+    @Cacheable(value = "authors")
     public List<AuthorResponse> getAllAuthors() {
         return authorRepository.findAll().stream().map(this::toAuthorResponse).toList();
     }
@@ -32,18 +35,21 @@ public class AuthorService {
         return toAuthorResponse(author);
     }
 
+    @CacheEvict(value = "authors",  allEntries = true)
     public AuthorResponse createAuthor(AuthorRequest request) {
         Author author = new Author();
         author.setName(request.name());
         return toAuthorResponse(authorRepository.save(author));
     }
 
+    @CacheEvict(value = "authors",  allEntries = true)
     public AuthorResponse updateAuthor(AuthorRequest request, long id) {
         Author author = authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + id));
         author.setName(request.name());
         return toAuthorResponse(authorRepository.save(author));
     }
 
+    @CacheEvict(value = "authors",  allEntries = true)
     public AuthorResponse patchAuthor(AuthorPatchRequest request, long id) {
         Author author = authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author not found - Id: " + id));
 
@@ -54,6 +60,7 @@ public class AuthorService {
         return toAuthorResponse(authorRepository.save(author));
     }
 
+    @CacheEvict(value = "authors",  allEntries = true)
     public void deleteAuthor(long id) {
         if (!authorRepository.existsById(id)) {
             throw new ResourceNotFoundException("Author not found - Id: " + id);

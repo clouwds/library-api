@@ -129,5 +129,5 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
 - [ ] `MockMvc`/`WebTestClient` tests for controllers
 - [ ] Testcontainers-backed integration tests against real Postgres
 - [ ] `docker-compose.yml` for app + Postgres
-- [ ] Response caching (`@Cacheable`) on a read-heavy endpoint
+- [x] Response caching (`@Cacheable`) on a read-heavy endpoint
 - [ ] Simple rate limiting on the auth endpoints

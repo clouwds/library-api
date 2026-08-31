@@ -126,7 +126,7 @@ Stack: Spring Boot, Java, Maven, PostgreSQL (`localhost:5432`).
 
 ## Phase 6 — Stretch (optional)
 
-- [ ] `MockMvc`/`WebTestClient` tests for controllers
+- [x] `MockMvc`/`WebTestClient` tests for controllers
 - [ ] Testcontainers-backed integration tests against real Postgres
 - [x] `docker-compose.yml` for app + Postgres
 - [x] Response caching (`@Cacheable`) on a read-heavy endpoint
